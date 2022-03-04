@@ -5,9 +5,16 @@ export default function middleware(req: NextRequest, ev: NextFetchEvent) {
   const url = req.nextUrl.clone();
 
   const hostname = req.headers.get("host");
-  const { pathname } = req.nextUrl;
-  console.log("hostname: ", hostname);
-  console.log("pathname: ", pathname);
+  const pathname = url.pathname;
+
+  if (
+    !url.pathname.includes(".") && // exclude files public folder
+    !url.pathname.startsWith("/api") // exclude API routes
+  ) {
+    console.log("\n\n---------------------- \n");
+    console.log("hostname", hostname);
+    console.log("pathname", pathname);
+  }
 
   // If localhost, assign the host value manually
   // If prod, get the custom domain/subdomain value by removing the root URL
@@ -16,8 +23,6 @@ export default function middleware(req: NextRequest, ev: NextFetchEvent) {
     process.env.NODE_ENV == "production"
       ? hostname.replace(`.${process.env.ROOT_URL}`, "")
       : process.env.CURR_HOST;
-
-  console.log("currentHost", currentHost);
 
   // Prevent security issues – users should not be able to canonically access
   // the pages/sites folder and its respective contents. This can also be done
