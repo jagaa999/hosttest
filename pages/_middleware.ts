@@ -24,7 +24,7 @@ export default function middleware(req: NextRequest, ev: NextFetchEvent) {
         // hostObject = prepareDevelopmentHost();
         break;
       case "production":
-        console.log("Хөгжүүлэлийн орчинд ажиллаж байна");
+        console.log("Production орчинд ажиллаж байна");
         break;
       default:
         break;
