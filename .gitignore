@@ -33,3 +33,5 @@ yarn-error.log*
 
 # Vercel
 .vercel
+package-lock.json
+.gitignore

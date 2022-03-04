@@ -2,26 +2,59 @@ import { NextResponse } from "next/server";
 import type { NextFetchEvent, NextRequest } from "next/server";
 
 const prepareDevelopmentHost = (hostname, pathname) => {
-  let tempPath = pathname.split("/").filter((el) => el); //['news', 'detail', 'common'] гэх мэтээр салгана.
-  const domain = tempPath.shift(); //Эхний элементийг салгаж domain-д өгнө.
-  const tempSlug = tempPath.join("/"); //үлдсэн үгсийг /-ээр холбож залгана.
+  //# prepare domain
+  //['news', 'detail', 'common'] гэх мэтээр салгана.
+  let tempPath = pathname.split("/").filter((el) => el);
+  //Эхний элементийг салгаж domain-д өгнө.
+  // const domain = tempPath.shift();
+  const tempSub = "www";
+  const tempDomain = tempPath.shift();
+  const tempTld = "mn";
 
-  return { domain: domain, slug: tempSlug };
+  //# prepare slug
+  //үлдсэн үгсийг /-ээр холбож залгана.
+  let tempSlug = tempPath.join("/");
+  if (tempSlug === "") tempSlug = "home";
+
+  return {
+    domain: { subDomain: tempSub, rootDomain: tempDomain, tld: tempTld },
+    slug: tempSlug,
+  };
 };
 
 const prepareProductionHost = (hostname, pathname) => {
-  console.log("CXXXXXXXXX: ", hostname);
-  console.log("CXXXXXXXXX pathname: ", pathname);
-  let tempPath = pathname.split("/").filter((el) => el); //['news', 'detail', 'common'] гэх мэтээр салгана.
-  const tempSlug = tempPath.join("/"); //үлдсэн үгсийг /-ээр холбож залгана.
+  console.log("prepareProductionHost hostname: ", hostname);
+  console.log("prepareProductionHost pathname: ", pathname);
 
-  let tempHost = hostname.split(".").filter((el) => el); //['www', 'vercel', 'com'] гэх мэтээр салгана.
+  //# prepare domain
+  //['www', 'vercel', 'com'] гэх мэтээр салгана.
+  let tempHost = hostname.split(".").filter((el) => el);
 
-  const tempSub = tempHost.shift();
-  const tempDomain = tempHost.shift();
-  const tempTld = tempHost.shift();
+  const subDomain = tempHost.shift();
+  const rootDomain = tempHost.shift();
+  const tld = tempHost.shift();
 
-  return { domain: tempDomain, slug: tempSlug };
+  //# prepare slug
+  //['news', 'detail', 'common'] гэх мэтээр салгана.
+  let tempPath = pathname.split("/").filter((el) => el);
+  //үлдсэн үгсийг /-ээр холбож залгана.
+  const tempSlug = tempPath.join("/");
+
+  let hostObject = {
+    domain: { subDomain: subDomain, rootDomain: rootDomain, tld: tld },
+    slug: tempSlug,
+  };
+
+  const localList = ["interactive", "vercel", "localhost", "veritech"];
+
+  if (localList.includes(rootDomain)) {
+    hostObject = prepareDevelopmentHost(
+      `${hostObject.domain.subDomain}.${hostObject.domain.rootDomain}.${hostObject.domain.tld}`,
+      pathname
+    );
+  }
+
+  return hostObject;
 };
 
 export default function middleware(req: NextRequest, ev: NextFetchEvent) {
@@ -29,11 +62,11 @@ export default function middleware(req: NextRequest, ev: NextFetchEvent) {
 
   // const hostname = req.headers.get("host");
   // const pathname = url.pathname;
-  const hostname = "hosttest-iota.vercel.app";
-  const pathname = "/news/detail/dfsfsd";
+  const hostname = "hosttest-iota.interactive.app";
+  const pathname = "/cozy/news/detail";
 
   let hostObject = {
-    domain: "",
+    domain: {},
     slug: "",
   };
 
