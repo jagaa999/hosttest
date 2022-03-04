@@ -7,13 +7,32 @@ export default function middleware(req: NextRequest, ev: NextFetchEvent) {
   const hostname = req.headers.get("host");
   const pathname = url.pathname;
 
+  let hostObject = {
+    domain: "",
+    slug: "",
+  };
+
   if (
     !url.pathname.includes(".") && // exclude files public folder
     !url.pathname.startsWith("/api") // exclude API routes
   ) {
     console.log("\n\n---------------------- \n");
-    console.log("hostname", hostname);
-    console.log("pathname", pathname);
+
+    switch (process.env.NODE_ENV) {
+      case "development":
+        console.log("Хөгжүүлэлийн орчинд ажиллаж байна");
+        // hostObject = prepareDevelopmentHost();
+        break;
+      case "production":
+        console.log("Хөгжүүлэлийн орчинд ажиллаж байна");
+        break;
+      default:
+        break;
+    }
+
+    console.log("hostname: ", hostname);
+    console.log("pathname: ", pathname);
+    console.log("hostObject: ", hostObject);
   }
 
   // If localhost, assign the host value manually
