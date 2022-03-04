@@ -1,11 +1,36 @@
 import { NextResponse } from "next/server";
 import type { NextFetchEvent, NextRequest } from "next/server";
+import _ from "lodash";
+
+const prepareDevelopmentHost = (hostname, pathname) => {
+  let tempPath = _.filter(_.split(pathname, "/")); //['news', 'detail', 'common'] гэх мэтээр салгана.
+  const domain = tempPath.shift(); //Эхний элементийг салгаж domain-д өгнө.
+  const tempSlug = _.join(tempPath, "/"); //үлдсэн үгсийг /-ээр холбож залгана.
+
+  return { domain: domain, slug: tempSlug };
+};
+
+const prepareProductionHost = (hostname, pathname) => {
+  console.log("CXXXXXXXXX: ", hostname);
+  console.log("CXXXXXXXXX pathname: ", pathname);
+  let tempPath = _.filter(_.split(pathname, "/")); //['news', 'detail', 'common'] гэх мэтээр салгана.
+  const tempSlug = _.join(tempPath, "/"); //үлдсэн үгсийг /-ээр холбож залгана.
+
+  let tempHost = _.filter(_.split(hostname, ".")); //['www', 'vercel', 'com'] гэх мэтээр салгана.
+  const tempSub = tempHost.shift();
+  const tempDomain = tempHost.shift();
+  const tempTld = tempHost.shift();
+
+  return { domain: tempDomain, slug: tempSlug };
+};
 
 export default function middleware(req: NextRequest, ev: NextFetchEvent) {
   const url = req.nextUrl.clone();
 
-  const hostname = req.headers.get("host");
-  const pathname = url.pathname;
+  // const hostname = req.headers.get("host");
+  // const pathname = url.pathname;
+  const hostname = "hosttest-iota.vercel.app";
+  const pathname = "/news/detail/dfsfsd";
 
   let hostObject = {
     domain: "",
@@ -17,21 +42,23 @@ export default function middleware(req: NextRequest, ev: NextFetchEvent) {
     !url.pathname.startsWith("/api") // exclude API routes
   ) {
     console.log("\n\n---------------------- \n");
+    console.log("hostname: ", hostname);
+    console.log("pathname: ", pathname);
 
     switch (process.env.NODE_ENV) {
       case "development":
         console.log("Хөгжүүлэлийн орчинд ажиллаж байна");
-        // hostObject = prepareDevelopmentHost();
+        // hostObject = prepareDevelopmentHost(hostname, pathname);
+        hostObject = prepareProductionHost(hostname, pathname);
         break;
       case "production":
         console.log("Production орчинд ажиллаж байна");
+        hostObject = prepareProductionHost(hostname, pathname);
         break;
       default:
         break;
     }
 
-    console.log("hostname: ", hostname);
-    console.log("pathname: ", pathname);
     console.log("hostObject: ", hostObject);
   }
 
