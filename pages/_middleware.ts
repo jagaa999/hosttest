@@ -30,9 +30,15 @@ const prepareProductionHost = (hostname, pathname) => {
   //['www', 'vercel', 'com'] гэх мэтээр салгана.
   let tempHost = hostname.split(".").filter((el) => el);
 
-  const subDomain = tempHost.shift();
-  const rootDomain = tempHost.shift();
-  const tld = tempHost.shift();
+  let subDomain = tempHost.shift();
+  let rootDomain = tempHost.shift();
+  let tld = tempHost.shift();
+
+  if (subDomain === "localhost:3000") {
+    subDomain = "www";
+    rootDomain = "localhost";
+    tld = "mn";
+  }
 
   //# prepare slug
   //['news', 'detail', 'common'] гэх мэтээр салгана.
@@ -41,17 +47,62 @@ const prepareProductionHost = (hostname, pathname) => {
   const tempSlug = tempPath.join("/");
 
   let hostObject = {
-    domain: { subDomain: subDomain, rootDomain: rootDomain, tld: tld },
-    slug: tempSlug,
+    domain: {},
+    slug: "",
   };
 
-  const localList = ["interactive", "vercel", "localhost", "veritech"];
+  let domainType = "default";
 
-  if (localList.includes(rootDomain)) {
-    hostObject = prepareDevelopmentHost(
-      `${hostObject.domain.subDomain}.${hostObject.domain.rootDomain}.${hostObject.domain.tld}`,
-      pathname
-    );
+  /*
+  local
+  localhost:3000/developer
+  customer.veritech.mn/developer //dev руу дуудна
+  page.veritech.mn/developer //cloud руу дуудна
+
+  sub
+  developer.interactive.mn
+
+  default
+  www.skyresort.mn
+  */
+
+  //check subhost
+  const subList = ["interactive", "veritech"];
+  if (subList.includes(rootDomain)) {
+    domainType = "sub";
+  }
+
+  //check localhost
+  const localList01 = ["vercel", "localhost"];
+  if (localList01.includes(rootDomain)) {
+    domainType = "local";
+  }
+  const localList02 = ["customer.veritech", "page.veritech"];
+  if (localList02.includes(`${subDomain}.${rootDomain}`)) {
+    domainType = "local";
+  }
+
+  switch (domainType) {
+    case "default":
+      hostObject = {
+        domain: { subDomain: subDomain, rootDomain: rootDomain, tld: tld },
+        slug: tempSlug,
+      };
+      break;
+    case "local":
+      hostObject = prepareDevelopmentHost(
+        `${subDomain}.${rootDomain}.${tld}`,
+        pathname
+      );
+      break;
+    case "sub":
+      hostObject = {
+        domain: { subDomain: "www", rootDomain: subDomain, tld: tld },
+        slug: tempSlug,
+      };
+      break;
+    default:
+      break;
   }
 
   return hostObject;
@@ -60,10 +111,10 @@ const prepareProductionHost = (hostname, pathname) => {
 export default function middleware(req: NextRequest, ev: NextFetchEvent) {
   const url = req.nextUrl.clone();
 
-  // const hostname = req.headers.get("host");
-  // const pathname = url.pathname;
-  const hostname = "hosttest-iota.interactive.app";
-  const pathname = "/cozy/news/detail";
+  const hostname = req.headers.get("host");
+  const pathname = url.pathname;
+  // const hostname = "localhost:3000";
+  // const pathname = "/cozy/news/detail";
 
   let hostObject = {
     domain: {},
@@ -80,9 +131,9 @@ export default function middleware(req: NextRequest, ev: NextFetchEvent) {
 
     switch (process.env.NODE_ENV) {
       case "development":
-        console.log("Хөгжүүлэлийн орчинд ажиллаж байна");
-        // hostObject = prepareDevelopmentHost(hostname, pathname);
-        hostObject = prepareProductionHost(hostname, pathname);
+        console.log("Хөгжүүлэлтийн орчинд ажиллаж байна");
+        hostObject = prepareDevelopmentHost(hostname, pathname);
+        // hostObject = prepareProductionHost(hostname, pathname);
         break;
       case "production":
         console.log("Production орчинд ажиллаж байна");
