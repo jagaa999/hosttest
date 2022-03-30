@@ -6,18 +6,27 @@ type PropsType = {
 };
 
 const Detect: FC<PropsType> = ({ myData }) => {
-  console.log("myData", myData);
+  // console.log("myData", myData);
 
-  return <>Энд сайт гарч байна.</>;
+  return (
+    <>
+      <div>Энд сайт гарч байна. Энэ бол Detect юм.</div>
+      <div className="mt-10 bg-yellow-100 p-10">{myData}</div>
+    </>
+  );
 };
 
 export const getStaticProps: GetStaticProps = async (context) => {
   // ...
-  console.log("context", context);
+  console.log("getStaticProps context", context);
+
   return {
     props: {
-      myData: "dfsdfdsfdsf",
+      myData: `Энэ бол getStaticProps-оос ирсэн дата юм. ${Math.floor(
+        Math.random() * 10
+      )}`,
     },
+    revalidate: 1 * 60 * 5, //60 seconds * 5 minutes
   };
 };
 

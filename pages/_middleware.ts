@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import type { NextFetchEvent, NextRequest } from "next/server";
 import {
+  prepareHostObject,
   prepareDomainDevelopmentHost,
   prepareDomainProductionHost,
-} from "../util/helper";
+} from "../util/middlewareHelper";
 
 // https://github.com/vercel/examples/blob/main/edge-functions/hostname-rewrites/pages/_middleware.ts
 
@@ -14,36 +15,13 @@ export default function middleware(req: NextRequest, ev: NextFetchEvent) {
   const pathname = url.pathname;
   // const hostname = "localhost:3000";
   // const pathname = "/cozy/news/detail";
+  // console.log("middleware -hostname ", hostname, "  -pathname ", pathname);
 
-  let hostObject = {
-    domain: { subDomain: "", rootDomain: "", tld: "" },
-    slug: "",
-  };
+  const hostObject = prepareHostObject(url, hostname, pathname);
 
-  if (
-    !url.pathname.includes(".") && // exclude files public folder
-    !url.pathname.startsWith("/api") // exclude API routes
-  ) {
-    console.log("\n\n---------------------- \n");
-    console.log("hostname: ", hostname);
-    console.log("pathname: ", pathname);
+  // console.log("ddd", hostObject);
 
-    switch (process.env.NODE_ENV) {
-      case "development":
-        console.log("Хөгжүүлэлтийн орчинд ажиллаж байна");
-        hostObject = prepareDomainDevelopmentHost(hostname, pathname);
-        // hostObject = prepareProductionHost(hostname, pathname);
-        break;
-      case "production":
-        console.log("Production орчинд ажиллаж байна");
-        hostObject = prepareDomainProductionHost(hostname, pathname);
-        break;
-      default:
-        break;
-    }
-
-    console.log("hostObject: ", hostObject);
-  }
+  console.log("middleware hostObject ready: ", hostObject);
 
   // Prevent security issues – users should not be able to canonically access
   // the pages/sites folder and its respective contents. This can also be done
@@ -54,17 +32,29 @@ export default function middleware(req: NextRequest, ev: NextFetchEvent) {
 
   if (
     !url.pathname.includes(".") && // exclude all files in the public folder
-    !url.pathname.startsWith("/api") // exclude all API routes
+    !url.pathname.startsWith("/api") && // exclude all API routes
+    !url.pathname.startsWith("/callback") && // exclude all callback
+    !url.pathname.startsWith("/check") && // exclude all callback
+    !url.pathname.startsWith("/login") && // exclude all login
+    !url.pathname.startsWith("/page") // page-ийг бас орхих хэрэгтэй.
   ) {
-    console.log("Ийшээ орсон уу");
-    // rewrite to the current hostname under the pages/sites folder
-    // the main logic component will happen in pages/sites/[site]/index.tsx
-    // url.pathname = `/_sites/${pathname}`;
+    /*
+    V1.0
+    url.pathname = `/_sites/${hostObject.domain.rootDomain}/${
+      hostObject.slug
+    }?hostObject=${encodeURIComponent(JSON.stringify(hostObject))}`;
+    */
+
+    //V2.0
     url.pathname = `/_sites/${hostObject.domain.rootDomain}/${hostObject.slug}`;
-    console.log("url.pathname", url.pathname);
-    // return NextResponse.rewrite(url);
-    // const ddd = `/_sites/${pathname}`;
-    // console.log("BBBBBBB ddd", ddd);
+
+    // NextResponse.next().cookie("theme", "hahahahaha");
+    //cookie бичдэг хэсэг. ! энийг getServerSideProps дээр авахын тулд заавал refresh хийх ёстой болоод байна!! Иймээс болилоо. hostObject-ийг шууд url.pathname дотор өгч явуулав.
+    /*
+    const res = NextResponse.rewrite(url);
+    res.cookie("hostObject", JSON.stringify(hostObject));
+    return res;
+    */
     return NextResponse.rewrite(url);
   }
 }

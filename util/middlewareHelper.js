@@ -1,4 +1,46 @@
-//jagaa start
+export const prepareHostObject = (url, hostname, pathname) => {
+  let hostObject = {
+    domain: { subDomain: "", rootDomain: "", tld: "" },
+    slug: "",
+    domainType: "default", //default, local, sub
+  };
+
+  if (
+    !url.pathname.includes(".") && // exclude files public folder
+    !url.pathname.startsWith("/api") && // exclude API routes
+    !url.pathname.startsWith("/page") // page-ийг бас орхих хэрэгтэй.
+  ) {
+    console.log("\n\n---------------------- \n");
+    console.log("hostname: ", hostname);
+    console.log("pathname: ", pathname);
+
+    switch (process.env.NODE_ENV) {
+      case "development":
+        // console.log("Хөгжүүлэлтийн орчинд ажиллаж байна");
+        hostObject = prepareDomainDevelopmentHost(hostname, pathname);
+        // hostObject = prepareProductionHost(hostname, pathname);
+        break;
+      case "production":
+        // console.log("Production орчинд ажиллаж байна");
+        hostObject = prepareDomainProductionHost(hostname, pathname);
+        break;
+      default:
+        break;
+    }
+  }
+
+  //correct and convert domains
+  if (hostObject.domain.rootDomain === "skyresorteshop")
+    hostObject.domain.rootDomain = "skyresort";
+  if (
+    hostObject.domain.rootDomain === undefined ||
+    hostObject.domain.rootDomain === ""
+  ) {
+    hostObject.domain.rootDomain = "citizen";
+  }
+
+  return hostObject;
+};
 
 export const prepareDomainDevelopmentHost = (hostname, pathname) => {
   //# prepare domain
@@ -7,7 +49,7 @@ export const prepareDomainDevelopmentHost = (hostname, pathname) => {
   //Эхний элементийг салгаж domain-д өгнө.
   // const domain = tempPath.shift();
   const tempSub = "www";
-  const tempDomain = tempPath.shift() || "default";
+  const tempDomain = tempPath.shift();
   const tempTld = "mn";
 
   //# prepare slug
@@ -18,6 +60,7 @@ export const prepareDomainDevelopmentHost = (hostname, pathname) => {
   return {
     domain: { subDomain: tempSub, rootDomain: tempDomain, tld: tempTld },
     slug: tempSlug,
+    domainType: "local",
   };
 };
 
@@ -45,12 +88,13 @@ export const prepareDomainProductionHost = (hostname, pathname) => {
   //үлдсэн үгсийг /-ээр холбож залгана.
   const tempSlug = tempPath.join("/");
 
+  let domainType = "default";
+
   let hostObject = {
     domain: { subDomain: "", rootDomain: "", tld: "" },
     slug: "",
+    domainType,
   };
-
-  let domainType = "default";
 
   /*
   local
@@ -86,6 +130,7 @@ export const prepareDomainProductionHost = (hostname, pathname) => {
       hostObject = {
         domain: { subDomain: subDomain, rootDomain: rootDomain, tld: tld },
         slug: tempSlug,
+        domainType,
       };
       break;
     case "local":
@@ -98,6 +143,7 @@ export const prepareDomainProductionHost = (hostname, pathname) => {
       hostObject = {
         domain: { subDomain: "www", rootDomain: subDomain, tld: tld },
         slug: tempSlug,
+        domainType,
       };
       break;
     default:
@@ -106,5 +152,3 @@ export const prepareDomainProductionHost = (hostname, pathname) => {
 
   return hostObject;
 };
-
-//jagaa end
